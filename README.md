@@ -2,7 +2,6 @@
 
 [Terraform](https://www.terraform.io/) enables you to safely and predictably provision, change, and improve infrastructure using [plans](https://www.terraform.io/docs/commands/plan.html) and [commands](https://www.terraform.io/docs/commands/index.html). This repo contains Terraform plans & commands for provisioning an [Azure VMSS](https://docs.microsoft.com/en-us/azure/virtual-machine-scale-sets/virtual-machine-scale-sets-overview) from an image using a Jenkins pipeline.
 
-![jenkins](https://user-images.githubusercontent.com/17064840/34257878-57d1f228-e664-11e7-98bd-4a1e63b3860c.png)
 ![image](https://user-images.githubusercontent.com/17064840/34257086-1293ab1e-e661-11e7-88c5-a23e3b0b1502.png)
 
 
