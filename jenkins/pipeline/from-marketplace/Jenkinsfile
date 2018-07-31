@@ -1,0 +1,62 @@
+podTemplate(label: 'azurevm', containers: [
+    containerTemplate(name: 'terraform-az', image: '<acrLoginServer>/terraform-az', ttyEnabled: true, command: 'cat',envVars: [
+       secretEnvVar(key: 'ARM_CLIENT_ID', secretName: '<your-secret-name>', secretKey: 'clientid'),
+       secretEnvVar(key: 'ARM_CLIENT_SECRET', secretName: '<your-secret-name>', secretKey: 'clientsecret'),
+       secretEnvVar(key: 'ARM_TENANT_ID', secretName: '<your-secret-name>', secretKey: 'tenantid'),
+       secretEnvVar(key: 'ARM_SUBSCRIPTION_ID', secretName: '<your-secret-name>', secretKey: 'subscriptionid')
+        ]),
+  ]) 
+{
+    node('azurevm') {
+        def gitRepo = 'https://github.com/<your-repo>/terraform-vm-vmss'
+        currentBuild.result = "SUCCESS"
+
+    try {
+         stage('Init parameters'){
+            container('terraform-az') {
+                withCredentials([sshUserPrivateKey(credentialsId: 'public', keyFileVariable: 'PUBLICKEY')]) {
+                withCredentials([sshUserPrivateKey(credentialsId: 'private', keyFileVariable: 'KEY')]) {
+                        sh  """
+                        mkdir /home/jenkins/.ssh
+                        cat $KEY >/home/jenkins/.ssh/id_rsa
+                        cat $PUBLICKEY >/home/jenkins/.ssh/id_rsa.pub
+                        """
+                    }}     
+            }
+         }
+         stage('Checkout'){
+            container('terraform-az') {
+            git url: gitRepo, branch: 'master'
+            }
+        }
+        stage('Terraform init'){
+            container('terraform-az') {
+               sh  """
+                    cd from-marketplace
+                    terraform init
+                   """
+            }
+        }
+        stage('Terraform plan'){
+            container('terraform-az') {
+               sh  """  
+                    cd from-marketplace
+                    terraform plan 
+                   """
+            }
+        }
+        stage('Terraform apply'){
+            container('terraform-az') {
+               sh  """  
+                    cd from-marketplace
+                    terraform apply -input=false -auto-approve
+                   """
+            }
+        }
+    }
+    catch (err) {
+        currentBuild.result = "FAILURE"
+        throw err
+    }
+    }
+   }

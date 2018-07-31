@@ -1,0 +1,51 @@
+// ******
+// Exptected parameters for HTTP request to pipeline
+// ******
+//deployment="client01"
+
+
+podTemplate(label: 'azurevm', containers: [
+    containerTemplate(name: 'terraform-az', image: '<acrLoginServer>/terraform-az', ttyEnabled: true, command: 'cat',envVars: [
+       secretEnvVar(key: 'ARM_CLIENT_ID', secretName: '<your-secret-name>', secretKey: 'clientid'),
+       secretEnvVar(key: 'ARM_CLIENT_SECRET', secretName: '<your-secret-name>', secretKey: 'clientsecret'),
+       secretEnvVar(key: 'ARM_TENANT_ID', secretName: '<your-secret-name>', secretKey: 'tenantid'),
+       secretEnvVar(key: 'ARM_SUBSCRIPTION_ID', secretName: '<your-secret-name>', secretKey: 'subscriptionid')
+        ]),
+  ]) 
+{
+    node('azurevm') {
+        currentBuild.result = "SUCCESS"
+
+    try {
+         stage('Init parameters'){
+            container('terraform-az') {
+                withCredentials([sshUserPrivateKey(credentialsId: 'public', keyFileVariable: 'PUBLICKEY')]) {
+                withCredentials([sshUserPrivateKey(credentialsId: 'private', keyFileVariable: 'KEY')]) {
+                        sh  """
+                        mkdir /home/jenkins/.ssh
+                        cat $KEY >/home/jenkins/.ssh/id_rsa
+                        chmod 400 ~/.ssh/id_rsa
+                        cat $PUBLICKEY >/home/jenkins/.ssh/id_rsa.pub
+                        """
+                    }}     
+            }
+         }
+         stage('Download files'){
+            container('terraform-az') {
+                azureDownload containerName: '<container-name>', downloadType: 'container', fileShare: '', includeArchiveZips: true, includeFilesPattern: '${deployment}.tar.gz', storageCredentialId: '<jenkins-storage-id>'
+            }
+        }
+        stage('Terraform destroy'){
+            container('terraform-az') {  
+                    sh (script:"tar -xzvmf $deployment'.tar.gz'")
+                    sh (script:"terraform destroy -force -var='terraform_image_id=foo'")
+                     
+            }
+        }
+    }
+    catch (err) {
+        currentBuild.result = "FAILURE"
+        throw err
+    }
+    }
+}
