@@ -5,7 +5,7 @@
 
 
 podTemplate(label: 'azurevm', containers: [
-    containerTemplate(name: 'terraform-az', image: '<acrLoginServer>/terraform-az', ttyEnabled: true, command: 'cat',envVars: [
+    containerTemplate(name: 'terraform-az', image: '<containerRegistry>/terraform-az', ttyEnabled: true, command: 'cat',envVars: [
        secretEnvVar(key: 'ARM_CLIENT_ID', secretName: '<your-secret-name>', secretKey: 'clientid'),
        secretEnvVar(key: 'ARM_CLIENT_SECRET', secretName: '<your-secret-name>', secretKey: 'clientsecret'),
        secretEnvVar(key: 'ARM_TENANT_ID', secretName: '<your-secret-name>', secretKey: 'tenantid'),
@@ -19,6 +19,7 @@ podTemplate(label: 'azurevm', containers: [
     try {
          stage('Init parameters'){
             container('terraform-az') {
+                // Get SSH public and private key for the VMSS from Jenkins
                 withCredentials([sshUserPrivateKey(credentialsId: 'public', keyFileVariable: 'PUBLICKEY')]) {
                 withCredentials([sshUserPrivateKey(credentialsId: 'private', keyFileVariable: 'KEY')]) {
                         sh  """
@@ -32,12 +33,14 @@ podTemplate(label: 'azurevm', containers: [
          }
          stage('Download files'){
             container('terraform-az') {
+                // Download existing tfstate from Azure Blob storage
                 azureDownload containerName: '<container-name>', downloadType: 'container', fileShare: '', includeArchiveZips: true, includeFilesPattern: '${deployment}.tar.gz', storageCredentialId: '<jenkins-storage-id>'
             }
         }
         stage('Terraform destroy'){
             container('terraform-az') {  
                     sh (script:"tar -xzvmf $deployment'.tar.gz'")
+                    // Destroy the VMSS cluster
                     sh (script:"terraform destroy -force -var='terraform_image_id=foo'")
                      
             }

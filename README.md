@@ -1,33 +1,26 @@
-# Provision & Deprovision Azure VM and VMSS using Terraform and a Jenkins pipeline
+# Provision & Deprovision Azure VMSS using Terraform and a Jenkins pipeline
 
 [Terraform](https://www.terraform.io/) enables you to safely and predictably provision, change, and improve infrastructure using [plans](https://www.terraform.io/docs/commands/plan.html) and [commands](https://www.terraform.io/docs/commands/index.html). This repo contains Terraform plans & commands for provisioning an [Azure VMSS](https://docs.microsoft.com/en-us/azure/virtual-machine-scale-sets/virtual-machine-scale-sets-overview) from an image using a Jenkins pipeline.
 
 ![image](https://user-images.githubusercontent.com/17064840/34257086-1293ab1e-e661-11e7-88c5-a23e3b0b1502.png)
 
 
+
 ## Requirements
+
+*The Jenkins pipelines in this repo leverage Kubernetes features such as pods and secrets while providing an elastic slave pool (each build runs in new pods).*
 
 To use Terraform it is required to have Azure Service Principal.<br/>
 Create an Azure Service Principal through [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/provision-an-azure-service-principal-azure-cli?toc=%2fazure%2fazure-resource-manager%2ftoc.json) or [Azure portal](https://docs.microsoft.com/en-us/azure/azure-resource-manager/resource-group-provision-service-principal-portal).
 
-
-#### Windows
-- [Docker for Windows](https://docs.docker.com/docker-for-windows/)
-- It is recommended to use [WSL](https://nickjanetakis.com/blog/setting-up-docker-for-windows-and-wsl-to-work-flawlessly) with Docker or change variables such as `${PWD}` to their Windows equivalents.
-
-#### macOS
-- [Docker for Mac](https://docs.docker.com/docker-for-mac/)
-   
-
-#### Kubernetes
-1. [Kubernetes](https://docs.microsoft.com/en-us/azure/aks/)
-2. [Helm](https://www.helm.sh/)
-3. [Jenkins in Kubernetes](https://hub.kubeapps.com/charts/stable/jenkins)
-4. [Azure Container Registry](https://docs.microsoft.com/en-us/azure/aks/tutorial-kubernetes-prepare-acr)
+1. Install [Docker](https://www.docker.com/community-edition) on your computer.
+2. Install [Kubernetes](https://docs.microsoft.com/en-us/azure/aks/tutorial-kubernetes-deploy-cluster)
+3. Install [Jenkins in Kubernetes](https://hub.kubeapps.com/charts/stable/jenkins) with [Helm](https://www.helm.sh/)
+4. Provision a container registry such as [Azure Container Registry](https://docs.microsoft.com/en-us/azure/aks/tutorial-kubernetes-prepare-acr) or create an account with [DockerHub](https://hub.docker.com/).
 
 ## Contents
 
-1. Build Docker image with Azure CLI and Terraform. This image will be used later locally or with Jenkins in Kubernetes
+1. Build Docker image with Azure CLI and Terraform. This image will be used later in Jenkins pipeline deployed in Kubernetes
 2. Deployment
     - Provision Azure VM from Azure Marketplace plan.
     - Provision a VM image plan.
@@ -38,51 +31,22 @@ Create an Azure Service Principal through [Azure CLI](https://docs.microsoft.com
 
 - Build
     ```
-    docker build -t <acrLoginServer>/terraform-az terraform
+    docker build -t <containerRegistry>/terraform-az terraform
     ```
-
-- Optional: Run locally
-    ```
-    docker run --rm -v ${PWD}:/opt/workspace -v ~/.ssh:/.ssh -it <acrLoginServer>/terraform-az terraform
-    ```
-
-    **Note**
-
-    The Docker run commands contains:
-    1. `-v ${PWD}:/opt/workspace`. This mount points to the current folder that contains the current scripts.
-    2. `-v ~/.ssh:/.ssh`. This mounts the SSH public and private keys that are neccessary the VM's and images creation. You don't need it if you change your terraform plans to use only passwords.
-    3. Set the Service Principal credentials in the container with the following environment variables:
-    ```
-    -e ARM_SUBSCRIPTION_ID=$AZURE_SUBSCRIPTION_ID -e ARM_CLIENT_SECRET=$AZURE_CLIENT_SECRET -e ARM_TENANT_ID=$AZURE_TENANT_ID -e ARM_CLIENT_ID=$AZURE_CLIENT_ID
-    ``` 
 
 - Push the Docker image to Azure Container Registry
     ```
-    docker push <acrLoginServer>/terraform-az
+    docker push <containerRegistry>/terraform-az
     ```
 
 <hr/>
 
-### 2. Deployment Options
-
-#### Run locally
- - Provision an Ubuntu VM from a marketplace image. 
-[Example.sh](/from-marketplace/example.sh)
- - Provision a managed VM image from a VM.
- [Example.sh](/provision-image/example.sh)
- - Provision VMSS from a VM image. [Example.sh](/from-image/vmss/example.sh)
-
-
-#### Jenkins Pipeline in Kubernetes
- - Provision an Ubuntu VM from a marketplace image. 
-[Jenkinsfile](/jenkins/pipeline/from-marketplace/Jenkinsfile)
- - Provision a managed VM image from a VM.
- [Jenkinsfile](/jenkins/pipeline/create-image/Jenkinsfile)
- - Provision VMSS from a VM image. 
-    - Create Kubernetes [secret](/jenkins/pipeline/terraform-az-secret.yaml) with Azure Service principal. This is required for the following pipelines.
+### 2. Deployment - Jenkins Pipeline in Kubernetes
+- Provision VMSS from a VM image. 
+    - Create Kubernetes [secret](/jenkins-pipelines/terraform-az-secret.yaml) with Azure Service principal. This is required for the following pipelines.
     - Setup [Azure Storage](https://docs.microsoft.com/en-us/azure/storage/common/storage-java-jenkins-continuous-integration-solution) in Jenkins and modify the pipelines accordingly with the relevant id, credentials and container name.
-    - Jenkins Pipeline (Provision) [Jenkinsfile](/jenkins/pipeline/from-image/vmss/provision/Jenkinsfile)
-    - Jenkins Pipeline (Deprovision) [Jenkinsfile](/jenkins/pipeline/from-image/vmss/deprovision/Jenkinsfile)
+    - Jenkins Pipeline (Provision) [Jenkinsfile](/jenkins-pipelines/create-vmss-from-image/provision/Jenkinsfile)
+    - Jenkins Pipeline (Deprovision) [Jenkinsfile](/jenkins-pipelines/create-vmss-from-image/deprovision/Jenkinsfile)
 
     ***The VMSS plan and tfstate are saved in Azure Blob Storage under `plans` and `tfstate` storage containers to support better automation***
 
