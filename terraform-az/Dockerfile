@@ -1,4 +1,4 @@
-FROM azuresdk/azure-cli-python:2.0.41
+FROM azuresdk/azure-cli-python:hotfix-2.0.41
 
 ARG tf_version="0.11.7"
 
