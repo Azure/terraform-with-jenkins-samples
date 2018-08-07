@@ -15,7 +15,7 @@ Create an Azure Service Principal through [Azure CLI](https://docs.microsoft.com
 
 1. Install [Docker](https://www.docker.com/community-edition) on your computer.
 2. Install [Kubernetes](https://docs.microsoft.com/en-us/azure/aks/tutorial-kubernetes-deploy-cluster)
-3. Install [Jenkins in Kubernetes](https://hub.kubeapps.com/charts/stable/jenkins) with [Helm](https://www.helm.sh/)
+3. Install [Jenkins in Kubernetes](https://hub.kubeapps.com/charts/stable/jenkins) with [Helm](https://www.helm.sh/) and configure [Tiller RBAC](https://docs.helm.sh/using_helm/#tiller-and-role-based-access-control)
 4. Provision a container registry such as [Azure Container Registry](https://docs.microsoft.com/en-us/azure/aks/tutorial-kubernetes-prepare-acr) or create an account with [DockerHub](https://hub.docker.com/).
 
 ## Contents
@@ -31,7 +31,7 @@ Create an Azure Service Principal through [Azure CLI](https://docs.microsoft.com
 
 - Build
     ```
-    docker build -t <containerRegistry>/terraform-az terraform
+    docker build -t <containerRegistry>/terraform-az terraform-az
     ```
 
 - Push the Docker image to Azure Container Registry
