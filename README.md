@@ -43,12 +43,15 @@ Create an Azure Service Principal through [Azure CLI](https://docs.microsoft.com
 
 ### 2. Deployment - Jenkins Pipeline in Kubernetes
 - Provision VMSS from a VM image. 
-    - Create Kubernetes [secret](/jenkins-pipelines/terraform-az-secret.yaml) with Azure Service principal. This is required for the following pipelines.
-    - Setup [Azure Storage](https://docs.microsoft.com/en-us/azure/storage/common/storage-java-jenkins-continuous-integration-solution) in Jenkins and modify the pipelines accordingly with the relevant id, credentials and container name.
-    - Jenkins Pipeline (Provision) [Jenkinsfile](/jenkins-pipelines/create-vmss-from-image/provision/Jenkinsfile)
-    - Jenkins Pipeline (Deprovision) [Jenkinsfile](/jenkins-pipelines/create-vmss-from-image/deprovision/Jenkinsfile)
+    1. Create Kubernetes [secret](/jenkins-pipelines/terraform-az-secret.yaml) with Azure Service principal. This is required for the following pipelines.
+    2. Setup [Azure Storage](https://docs.microsoft.com/en-us/azure/storage/common/storage-java-jenkins-continuous-integration-solution) in Jenkins and modify the pipelines accordingly with the relevant id, credentials and container name.
+    3. Jenkins Pipeline (Provision) [Jenkinsfile](/jenkins-pipelines/create-vmss-from-image/provision/Jenkinsfile)
+
+    4. Jenkins Pipeline (Deprovision) [Jenkinsfile](/jenkins-pipelines/create-vmss-from-image/deprovision/Jenkinsfile)
 
     ***The VMSS plan and tfstate are saved in Azure Blob Storage under `plans` and `tfstate` storage containers to support better automation***
+
+You can follow the detailed installation guide [here](installation.md)
 
 # Contributing
 

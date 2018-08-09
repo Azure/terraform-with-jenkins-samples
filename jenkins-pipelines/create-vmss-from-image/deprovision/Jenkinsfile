@@ -19,16 +19,13 @@ podTemplate(label: 'azurevm', containers: [
     try {
          stage('Init parameters'){
             container('terraform-az') {
-                // Get SSH public and private key for the VMSS from Jenkins
-                withCredentials([sshUserPrivateKey(credentialsId: 'public', keyFileVariable: 'PUBLICKEY')]) {
-                withCredentials([sshUserPrivateKey(credentialsId: 'private', keyFileVariable: 'KEY')]) {
+                // Get SSH public for the VMSS from Jenkins
+                withCredentials([sshUserPrivateKey(credentialsId: '<your-public-key-id>', keyFileVariable: 'PUBLICKEY')]) {
                         sh  """
                         mkdir /home/jenkins/.ssh
-                        cat $KEY >/home/jenkins/.ssh/id_rsa
-                        chmod 400 ~/.ssh/id_rsa
                         cat $PUBLICKEY >/home/jenkins/.ssh/id_rsa.pub
                         """
-                    }}     
+                    }   
             }
          }
          stage('Download files'){
